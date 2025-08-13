@@ -12,6 +12,7 @@ parser.add_argument('--fingerprint', help='Get the OTA using this fingerprint. R
 parser.add_argument('--model', help='Specify the model of the device. If not specified, the device code will be used.')
 parser.add_argument('--config', help='Use this config file instead of the default one.', default='config.yml')
 parser.add_argument('--serial', help='Specify the serial number of the device.', default=functions.generateSerial())
+parser.add_argument('--imei', help='Specify the IMEI of the device.', default=functions.generateImei())
 args = parser.parse_args()
 
 class Prober:
@@ -26,7 +27,8 @@ class Prober:
         update_desc = setting.get(b'update_description', b'').decode()
         return update_desc
 
-    def checkin(self, fingerprint: str, model: str = None, debug: bool = False, serial = functions.generateSerial()) -> str:
+    def checkin(self, fingerprint: str, model: str = None, debug: bool = False, 
+                serial = functions.generateSerial(), imei = functions.generateImei()) -> str:
         self.checkinproto.Clear()
         self.payload.Clear()
         self.build.Clear()
@@ -70,7 +72,7 @@ class Prober:
         self.checkinproto.unknown19 = "WIFI"
 
         # Generate the payload
-        self.payload.imei = functions.generateImei()
+        self.payload.imei = imei
         self.payload.id = 0
         self.payload.digest = functions.generateDigest()
         self.payload.checkin.CopyFrom(self.checkinproto)
@@ -117,7 +119,7 @@ class Prober:
 
     def checkin_cli(self) -> str:
         if args.fingerprint:
-            return self.checkin(args.fingerprint, args.model, args.debug, args.serial)
+            return self.checkin(args.fingerprint, args.model, args.debug, args.serial, args.imei)
         else:
             try:
                 with open(args.config, 'r') as file:
